@@ -1,0 +1,164 @@
+(function (lib, img, cjs, ss, an) {
+
+var p; // shortcut to reference prototypes
+lib.webFontTxtInst = {}; 
+var loadedTypekitCount = 0;
+var loadedGoogleCount = 0;
+var gFontsUpdateCacheList = [];
+var tFontsUpdateCacheList = [];
+lib.ssMetadata = [];
+
+
+
+lib.updateListCache = function (cacheList) {		
+	for(var i = 0; i < cacheList.length; i++) {		
+		if(cacheList[i].cacheCanvas)		
+			cacheList[i].updateCache();		
+	}		
+};		
+
+lib.addElementsToCache = function (textInst, cacheList) {		
+	var cur = textInst;		
+	while(cur != exportRoot) {		
+		if(cacheList.indexOf(cur) != -1)		
+			break;		
+		cur = cur.parent;		
+	}		
+	if(cur != exportRoot) {		
+		var cur2 = textInst;		
+		var index = cacheList.indexOf(cur);		
+		while(cur2 != cur) {		
+			cacheList.splice(index, 0, cur2);		
+			cur2 = cur2.parent;		
+			index++;		
+		}		
+	}		
+	else {		
+		cur = textInst;		
+		while(cur != exportRoot) {		
+			cacheList.push(cur);		
+			cur = cur.parent;		
+		}		
+	}		
+};		
+
+lib.gfontAvailable = function(family, totalGoogleCount) {		
+	lib.properties.webfonts[family] = true;		
+	var txtInst = lib.webFontTxtInst && lib.webFontTxtInst[family] || [];		
+	for(var f = 0; f < txtInst.length; ++f)		
+		lib.addElementsToCache(txtInst[f], gFontsUpdateCacheList);		
+
+	loadedGoogleCount++;		
+	if(loadedGoogleCount == totalGoogleCount) {		
+		lib.updateListCache(gFontsUpdateCacheList);		
+	}		
+};		
+
+lib.tfontAvailable = function(family, totalTypekitCount) {		
+	lib.properties.webfonts[family] = true;		
+	var txtInst = lib.webFontTxtInst && lib.webFontTxtInst[family] || [];		
+	for(var f = 0; f < txtInst.length; ++f)		
+		lib.addElementsToCache(txtInst[f], tFontsUpdateCacheList);		
+
+	loadedTypekitCount++;		
+	if(loadedTypekitCount == totalTypekitCount) {		
+		lib.updateListCache(tFontsUpdateCacheList);		
+	}		
+};
+// symbols:
+
+
+
+(lib.empty = function() {
+	this.initialize(img.empty);
+}).prototype = p = new cjs.Bitmap();
+p.nominalBounds = new cjs.Rectangle(0,0,4,4);
+
+
+(lib.mm = function(mode,startPosition,loop) {
+	this.initialize(mode,startPosition,loop,{});
+
+	// Слой 1
+	this.shape = new cjs.Shape();
+	this.shape.graphics.f("#FFFFFF").s().p("AwBM2Qi5AAgriaQgHgcAAg4IgByQQABh3A7g7QA8g7B5AAIf7AAQBcAAA7AnQA7AoASBKQAKAoAAA2QABH+gBJ+QAAA4gKAlQgMAxgfAkQgjAngxARQgqAPg7AAgAwMK0MAgWAAAIshriIhdA8Qg3AkgjAYQgbATgYABQgZgBgbgTQg8gph7hOgAxzJsIMdrfIsdoHgAFUhzIMbLdIAAzlgAAAgnIPYqFIgGgII+5AAg");
+	this.shape.setTransform(0,0,0.404,0.404);
+
+	this.timeline.addTween(cjs.Tween.get(this.shape).wait(1));
+
+}).prototype = p = new cjs.MovieClip();
+p.nominalBounds = new cjs.Rectangle(-50.9,-33.2,101.9,66.4);
+
+
+(lib.circle = function(mode,startPosition,loop) {
+	this.initialize(mode,startPosition,loop,{});
+
+	// Слой 1
+	this.shape = new cjs.Shape();
+	this.shape.graphics.f("#000000").s().p("AiXCUQg/g9AAhXQAAhWA/g+QA/g9BYAAQBZAAA/A9QA/A+AABWQAABXg/A9Qg/A+hZAAQhYAAg/g+g");
+
+	this.timeline.addTween(cjs.Tween.get(this.shape).wait(1));
+
+}).prototype = p = new cjs.MovieClip();
+p.nominalBounds = new cjs.Rectangle(-21.5,-21,43,42);
+
+
+(lib.mail = function(mode,startPosition,loop) {
+	this.initialize(mode,startPosition,loop,{});
+
+	// Слой 1
+	this.instance = new lib.mm("synched",0);
+	this.instance.parent = this;
+	this.instance.setTransform(0.1,0,0.643,0.61);
+
+	this.timeline.addTween(cjs.Tween.get(this.instance).to({regX:0.3,x:0.2,alpha:0},15).to({alpha:1},14).wait(1));
+
+}).prototype = p = new cjs.MovieClip();
+p.nominalBounds = new cjs.Rectangle(-32.6,-20.2,65.5,40.5);
+
+
+// stage content:
+(lib.mail_2 = function(mode,startPosition,loop) {
+	this.initialize(mode,startPosition,loop,{});
+
+	// assets
+	this.instance = new lib.empty();
+	this.instance.parent = this;
+	this.instance.setTransform(48,-9);
+
+	this.timeline.addTween(cjs.Tween.get(this.instance).wait(118));
+
+	// mail
+	this.instance_1 = new lib.mail("synched",0);
+	this.instance_1.parent = this;
+	this.instance_1.setTransform(22.2,22.5,0.336,0.336);
+
+	this.timeline.addTween(cjs.Tween.get(this.instance_1).wait(117).to({startPosition:29},0).wait(1));
+
+	// circle
+	this.instance_2 = new lib.circle("synched",0);
+	this.instance_2.parent = this;
+	this.instance_2.setTransform(22.1,22.1);
+
+	this.timeline.addTween(cjs.Tween.get(this.instance_2).wait(117).to({startPosition:0},0).wait(1));
+
+}).prototype = p = new cjs.MovieClip();
+p.nominalBounds = new cjs.Rectangle(22.6,13,51.4,52.1);
+// library properties:
+lib.properties = {
+	width: 44,
+	height: 44,
+	fps: 24,
+	color: "#454545",
+	opacity: 0.00,
+	webfonts: {},
+	manifest: [
+		{src:"/emailform/images/empty.jpg", id:"empty"}
+	],
+	preloads: []
+};
+
+
+
+
+})(lib = lib||{}, images = images||{}, createjs = createjs||{}, ss = ss||{}, AdobeAn = AdobeAn||{});
+var lib, images, createjs, ss, AdobeAn;

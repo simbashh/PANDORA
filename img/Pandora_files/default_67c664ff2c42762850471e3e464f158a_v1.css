@@ -1,0 +1,27 @@
+
+
+/* Start:/local/components/sdvv/form.send_gift_n/templates/.default/style.css?1640322740163*/
+.gift-panel {
+    max-width: 460px;
+    padding: 21px 44px 0;
+}
+.js-bgift-error {
+    color: red;
+}
+#hint-text-counter {
+    font-size: 12px;
+    color: #6c6864;
+}
+/* End */
+
+
+/* Start:/local/templates/pandora/components/bitrix/sale.basket.basket/.default/style.css?1607801906107*/
+.list-basket-goods__name a {
+    color: #27251f;
+}
+.list-basket-goods__name a:hover {
+    color: #f2a1b2;
+}
+/* End */
+/* /local/components/sdvv/form.send_gift_n/templates/.default/style.css?1640322740163 */
+/* /local/templates/pandora/components/bitrix/sale.basket.basket/.default/style.css?1607801906107 */

@@ -1,0 +1,732 @@
+
+; /* Start:"a:4:{s:4:"full";s:76:"/local/components/sdvv/search.form/templates/search/script.js?16650477808209";s:6:"source";s:61:"/local/components/sdvv/search.form/templates/search/script.js";s:3:"min";s:0:"";s:3:"map";s:0:"";}"*/
+function JCTitleSearch(arParams)
+{
+    var _this = this;
+
+    this.arParams = {
+        'AJAX_PAGE': arParams.AJAX_PAGE,
+        'AJAX_CALL': arParams.AJAX_CALL,
+        'CONTAINER_ID': arParams.CONTAINER_ID,
+        'INPUT_ID': arParams.INPUT_ID,
+        'MIN_QUERY_LEN': parseInt(arParams.MIN_QUERY_LEN)
+    };
+    if(arParams.WAIT_IMAGE)
+        this.arParams.WAIT_IMAGE = arParams.WAIT_IMAGE;
+    if(arParams.MIN_QUERY_LEN <= 0)
+        arParams.MIN_QUERY_LEN = 1;
+
+    this.cache = [];
+    this.cache_key = null;
+
+    this.startText = '';
+    this.running = false;
+    this.runningCall = false;
+    this.currentRow = -1;
+    this.RESULT = null;
+    this.CONTAINER = null;
+    this.INPUT = null;
+    this.WAIT = null;
+
+    this.ShowResult = function(result)
+    {
+        if(BX.type.isString(result))
+        {
+            _this.openSuggests(result);
+        }
+    };
+    
+    this.openSuggests = function (suggest) {
+        if (suggest) {
+            _this.RESULT.innerHTML = suggest;
+
+            let res = document.querySelectorAll('.search-drawer__form-result li');
+    
+            res.forEach(function (el, i) {
+                $(el).hover(function () {
+                    $(this).addClass('active');
+                    $(this).siblings().removeClass('active');
+                });
+    
+                BX.bind(el, 'click', function(e) {
+                        let val = e.currentTarget.getAttribute('data-name');
+                        let id = e.currentTarget.getAttribute('data-id');
+                        _this.onClick(val, id);
+                    });
+            });
+        }
+        
+        
+         _this.RESULT.classList.add('active');
+    };
+    
+    this.closeSuggests = function () {
+            //_this.RESULT.innerHTML = '';
+            _this.RESULT.classList.remove('active');
+        };
+    
+
+    this.onClick = function (value, id) {
+            _this.getResult(value, id);
+            _this.closeSuggests();
+        };
+    this.onSubmit = function()
+    {
+        _this.getResult(_this.INPUT.value);
+        _this.closeSuggests();
+        //BX.ajax.post(
+        //    _this.arParams.AJAX_PAGE,
+        //    {
+        //        'ajax_call':'y',
+        //        'INPUT_ID':_this.arParams.INPUT_ID,
+        //        'q':_this.INPUT.value,
+        //        'l':_this.arParams.MIN_QUERY_LEN
+        //    },
+        //    function(result)
+        //    {
+        //        if(result.length > 1) {
+        //            _this.ShowResult(result);
+        //            _this.showStatus('success');
+        //        } else {
+        //            _this.showStatus('error');
+        //        }
+        //    }
+        //);
+    };
+
+    this.onChange = BX.debounce(function(callback)
+    {
+
+        if (_this.running)
+        {
+            _this.runningCall = true;
+            return;
+        }
+        _this.running = true;
+
+        if(_this.INPUT.value != _this.oldValue && _this.INPUT.value != _this.startText)
+        {
+            _this.oldValue = _this.INPUT.value;
+            if(_this.INPUT.value.length >= _this.arParams.MIN_QUERY_LEN)
+            {
+                _this.cache_key = _this.arParams.INPUT_ID + '|' + _this.INPUT.value;
+                if(_this.cache[_this.cache_key] == null)
+                {
+                    BX.ajax.post(
+                        _this.arParams.AJAX_PAGE,
+                        {
+                            'ajax_call':'y',
+                            'INPUT_ID':_this.arParams.INPUT_ID,
+                            'q':_this.INPUT.value,
+                            'l':_this.arParams.MIN_QUERY_LEN
+                        },
+                        function(result)
+                        {
+                            _this.cache[_this.cache_key] = result;
+                            _this.ShowResult(result);
+                            _this.currentRow = -1;
+                            if(_this.WAIT) _this.WAIT.style.display = 'none';
+                                
+                            if (!!callback) callback();
+                            _this.running = false;
+                            
+                            if (_this.runningCall)
+                            {
+                                _this.runningCall = false;
+                                _this.onChange();
+                            }
+                        }
+                    );
+                    return;
+                }
+                else
+                {
+                    _this.ShowResult(_this.cache[_this.cache_key]);
+                    _this.currentRow = -1;
+                }
+            }
+        }
+        if (!!callback) callback();
+        _this.running = false;
+    }, 620);
+    
+    this.clear = function () {
+        $('.search-action__clear').hide();
+        $('.search-drawer__info').html('');
+        _this.closeSuggests();
+    };
+    
+    
+    
+    
+    this.getResult = function (value, id)
+    {
+
+        let panel = document.querySelector('.search-panel__row');
+        
+        let sendData = {
+                'ajax_call':'y',
+                'SEARCH_AJAX':"Y",
+                'q':value
+            };
+        if (id) {
+            sendData.id = id;
+        }
+        
+        //_this.INPUT.value = value;
+        $.ajax({
+            url: _this.arParams.AJAX_CALL,
+            data: sendData,
+            type: 'POST',
+            dataType: 'html',
+            beforeSend: function() {
+                $('.search-panel').mCustomScrollbar("destroy");
+            },
+            success: function(result){
+                if(result.length > 1) {
+                    panel.innerHTML = result;
+                    _this.showStatus('success');
+                } else {
+                    _this.showStatus('error');
+                }
+            },
+            complete: function () {
+                $('.search-panel').mCustomScrollbar();
+            }
+        });
+    };
+
+    this.checkValue = function () {
+        if(_this.INPUT.value.length > 1) {
+            _this.openSuggests();
+        }
+    };
+
+    this.showStatus =  function (status) {
+        let message = "";
+        let statusBlock = document.querySelector('.search-drawer__info');
+
+        if(status === "success") {
+            message = '<i class="icon icon-search-status"></i>' +
+                '<div class="search-drawer__info-content">' +
+                '<p><strong>Вот он! Именно тот товар, который вы искали!</strong></p>' +
+                '<p>Это так приятно, когда рррраз — и находишь именно то, что ищешь!</p>' +
+                '</div>';
+        } else {
+            message = '<i class="icon icon-search-status-nofound"></i>' +
+                '<div class="search-drawer__info-content">' +
+                '<p><strong>Нам очень жаль, но по вашему запросу ничего не найдено.</strong></p>' +
+                '<p>Иногда достаточно подобрать другое слово, чтобы все удалось! Или просто выберите категорию или товар из перечня:</p>' +
+                '</div>';
+        }
+
+        statusBlock.innerHTML = message;
+    };
+
+    this.Init = function()
+    {
+        this.CONTAINER = document.getElementById(this.arParams.CONTAINER_ID);
+        
+        this.RESULT = document.querySelector('.search-drawer__form');
+
+        this.INPUT = document.getElementById(this.arParams.INPUT_ID);
+        this.startText = this.oldValue = this.INPUT.value;
+        this.INPUT.onkeydown = this.onKeyDown;
+        let form = document.querySelector('.search-action__form');
+
+        BX.bind(this.INPUT, 'bxchange', function() {_this.onChange()});
+        BX.bind(form, 'submit', function(e) {
+            e.preventDefault();
+            _this.onSubmit();
+        });
+        BX.bind(this.INPUT, 'click', function() {_this.checkValue()});
+
+        //$(document).on('keydown', '.search-action__form #title-search-input', function(e) {
+        //    if (e.which === 13)
+        //        $('.search-drawer__form-result li:first').click();
+        //});
+    };
+
+    BX.ready(function (){_this.Init(arParams)});
+}
+
+/* End */
+;
+; /* Start:"a:4:{s:4:"full";s:96:"/local/templates/pandora/components/bitrix/sale.basket.basket/.default/script.js?164871953915972";s:6:"source";s:80:"/local/templates/pandora/components/bitrix/sale.basket.basket/.default/script.js";s:3:"min";s:0:"";s:3:"map";s:0:"";}"*/
+const SaleBasketBasketDefaultComponentJS = (function() {
+    let ajaxUrl = '/local/components/bitrix/sale.basket.basket/ajax.php';
+
+    let dataPost = {
+        'sessid': BX.bitrix_sessid(),
+        'site_id': 's1',
+        'via_ajax': 'Y',
+    };
+
+    let selectors = {
+        'btnDelete': '.js-basket-item-delete',
+        'selectQuantity': '.js-list-basket-quantity',
+        'selectSize': '.js-list-basket-size',
+        'row': '.js-basket-item-row',
+        'list': '.js-basket-list',
+        'basketItemCount': '.js-basket-all-count',
+        'basketFinalPrice': '.js-basket-final-price',
+        'basketItogo': '.js-basket-itogo',
+        'basketZoodPay': '.js-zoodpay',
+        'basketAllSum': '.js-basket-allsum',
+        'itemPrice': '.js-basket-item-price-',
+        'basketSale': '.js-basket-sale',
+        'basketShowBlock': '.js-show-block',
+        'setCoupon': '.js-basket-promo-set',
+        'clearCoupon': '.js-basket-promo-cancel'
+    };
+
+    let classes = {
+        'initialized': 'js-initialized',
+    };
+
+    /**
+     * Инициализация действий
+     */
+    let initDeleteItem = function() {
+        let buttons = document.querySelectorAll(selectors.btnDelete+':not(.' + classes.initialized + ')');
+        if (buttons.length) {
+            buttons.forEach(function(button) {
+                button.classList.add(classes.initialized);
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+
+                    setTimeout(function() {
+                        let ID = button.getAttribute('data-id'),
+                            post = dataPost;
+
+                        post.basketAction = 'delete';
+                        post.id = ID;
+
+                        BX.ajax({
+                            url: ajaxUrl,
+                            method: 'POST',
+                            data: post,
+                            dataType: 'json',
+                            onsuccess: function(result) {
+                                button.parentNode.remove();
+                                recalculate(result);
+                            }
+                        });
+                    }, 500);
+                });
+            });
+        }
+    };
+
+    let initChangeQuantity = function() {
+        //TODO: Переписать в общем стиле
+        $(document).on("change", selectors.selectQuantity, function (e) {
+            e.preventDefault();
+
+            let quantity = $(this).val(),
+                id = $(this).attr('data-id'),
+                post = dataPost,
+                itemName = 'QUANTITY_'+id;
+
+            post.basketAction = 'recalculateAjax';
+
+            post.basket = {[itemName]: quantity};
+
+            BX.ajax({
+                url: ajaxUrl,
+                method: 'POST',
+                data: post,
+                dataType: 'json',
+                onsuccess: function(result) {
+                    recalculate(result);
+                }
+            });
+        });
+    };
+
+    let initChangeSize = function() {
+        $(document).on("change", selectors.selectSize, function (e) {
+            e.preventDefault();
+
+            let size = $(this).val(),
+                id = $(this).attr('data-id'),
+                post = dataPost,
+                itemName = 'OFFER_'+id;
+
+            post.basketAction = 'recalculateAjax';
+
+            post.basket = {[itemName]: {RAZMER_TOVARA: size}};
+
+            BX.ajax({
+                url: ajaxUrl,
+                method: 'POST',
+                data: post,
+                dataType: 'json',
+                onsuccess: function(result) {
+                    recalculate(result);
+                }
+            });
+        });
+    };
+
+    let initSetCoupon = function() {
+        var timerid;
+        // Отменяем предустановленные события на change input
+        $(document).on("keyup, change, input", selectors.setCoupon, function (e) {
+            e.preventDefault();
+        });
+
+        // Валидация купона по нажатию на Enter
+        $(document).on('keypress', selectors.setCoupon, function(e) {
+            if(e.which === 13) {
+                let element = $(this),
+                    post = dataPost;
+
+                clearTimeout(timerid);
+
+                timerid = setTimeout(function() {
+                    if (element.val()) {
+                        showLoader();
+                        post.basketAction = 'recalculateAjax';
+                        post.basket = {COUPON: element.val()};
+
+                        BX.ajax({
+                            url: ajaxUrl,
+                            method: 'POST',
+                            data: post,
+                            dataType: 'json',
+                            onsuccess: function(result) {
+                                recalculate(result);
+                            }
+                        });
+                    }
+                }, 500);
+            }
+        });
+
+        $(document).on('focusout', selectors.setCoupon, function(e) {
+            let element = $(this),
+                post = dataPost;
+
+            clearTimeout(timerid);
+
+            timerid = setTimeout(function() {
+                if (element.val()) {
+                    showLoader();
+                    post.basketAction = 'recalculateAjax';
+                    post.basket = {COUPON: element.val()};
+
+                    BX.ajax({
+                        url: ajaxUrl,
+                        method: 'POST',
+                        data: post,
+                        dataType: 'json',
+                        onsuccess: function(result) {
+                            recalculate(result);
+                        }
+                    });
+                }
+            }, 500);
+        });
+    };
+
+    let initClearCoupon = function() {
+        $(document).on("click", selectors.clearCoupon, function (e) {
+            e.preventDefault();
+            showLoader();
+            let COUPON = $(selectors.setCoupon).val();
+            $(selectors.setCoupon).val('');
+            deleteCoupon(COUPON, 'Y');
+        });
+    };
+
+    let deleteCoupon = function (COUPON, reload) {
+        let post = dataPost;
+        post.basketAction = 'recalculateAjax';
+        post.basket = {delete_coupon: {[COUPON]: COUPON}};
+        BX.ajax({
+            url: ajaxUrl,
+            method: 'POST',
+            data: post,
+            dataType: 'json',
+            onsuccess: function(result) {
+                if (reload === 'Y')
+                    recalculate(result);
+            }
+        });
+    };
+
+    let updateBasket = function() {
+        let post = dataPost;
+
+        post.basketAction = 'recalculateAjax';
+
+        BX.ajax({
+            url: ajaxUrl,
+            method: 'POST',
+            data: post,
+            dataType: 'json',
+            onsuccess: function(result) {
+                recalculate(result);
+            }
+        });
+    };
+
+    let recalculate = function(result) {
+        if (!result) {
+            updateBasket();
+            return true;
+        }
+
+        if (result) {
+            //Покажем предупреждение и ошибки
+            showWarning(result.BASKET_DATA.WARNING_MESSAGE);
+
+            //Обновим итоговый блок
+            $(selectors.basketItemCount).text(result.BASKET_DATA.BASKET_ITEMS_COUNT);
+
+            let arrPrice = result.BASKET_DATA.allSum_FORMATED.split(' ');
+            if (arrPrice.length === 3) {
+                arrPrice[0] = arrPrice[0]+' '+arrPrice[1];
+                arrPrice[1] = arrPrice[2];
+            }
+            $(selectors.basketFinalPrice).html(arrPrice[0]+' <span class="order-basket-goods__summ-currency">'+arrPrice[1]+'</span>');
+
+            $(selectors.basketItogo).text(result.BASKET_DATA.allSum_FORMATED);
+
+            let zoodpay = Math.round(result.BASKET_DATA.allSum / 4);
+            $(selectors.basketZoodPay).text(zoodpay.toLocaleString('ru') +' тг');
+
+            $(selectors.basketAllSum).text(result.BASKET_DATA.PRICE_WITHOUT_DISCOUNT);
+
+            if (result.BASKET_DATA.DISCOUNT_PRICE_ALL > 0) {
+                $(selectors.basketSale).html(
+                    '<div class="info-basket-goods__item">\n' +
+                    '<div class="info-basket-goods__name">Скидка</div>\n' +
+                    '<div class="info-basket-goods__summ">-'+result.BASKET_DATA.DISCOUNT_PRICE_ALL_FORMATED+'</div>\n' +
+                    '</div>'
+                );
+            } else {
+                $(selectors.basketSale).html('');
+            }
+
+            //Обновим список товаров
+            updateBasketItems(result);
+
+            //Работа с купонами
+            var couponError = false;
+            let couponErrorMessage = "";
+            $.each(result.BASKET_DATA.COUPON_LIST, function(key, value) {
+                if (value.JS_STATUS === 'BAD') {
+                    couponError = true;
+                    couponErrorMessage = value.JS_CHECK_CODE;
+                    deleteCoupon(value.COUPON);
+                }
+            });
+            if (couponError) {
+                let message = {0: couponErrorMessage};
+                $(selectors.setCoupon).val('');
+                showWarning(message);
+            }
+        }
+
+        updateBasketCount();
+        setTimeout(function(){
+            hideLoader();
+        }, 1000);
+    };
+
+    let updateBasketItems = function(result) {
+        $(selectors.list).html('');
+        if (result.BASKET_DATA.BASKET_ITEMS_COUNT == 0) {
+            $(selectors.list).html('<div style="text-align: center;">Ваша корзина пуста</div>');
+            showHideBlock('hide');
+        } else {
+            $.each(result.BASKET_DATA.GRID.ROWS, function(key, value) {
+                let sizeBlock = '';
+                let available = value.AVAILABLE_QUANTITY;
+                let availableRes = [];
+                let availableHtml = '';
+
+                if (value.PROPS_ALL.RAZMER_TOVARA) {
+                    let keys = Object.keys(value.SKU_DATA),
+                        SKU = value.SKU_DATA[keys[0]],
+                        skuHtml = '';
+
+                    $.each(SKU.VALUES, function(skuKey, skuValue) {
+                        skuHtml += '<option '+(skuValue.NAME === value.PROPS_ALL.RAZMER_TOVARA.VALUE ? "selected" : "")+' value="'+skuValue.NAME+'">'+skuValue.NAME+'</option>';
+                    });
+
+                    sizeBlock =
+                        '<div class="list-basket-goods__select d-row">' +
+                            '<span class="list-basket-goods__select-name">Размер:</span>' +
+                            '<div class="list-basket-goods__select-change">' +
+                                '<select class="list-basket-select js-list-basket-select js-list-basket-size" data-id="'+value.ID+'">' +
+                                    skuHtml +
+                                '</select>' +
+                            '</div>' +
+                        '</div>'
+                    ;
+                }
+
+                if(value.AVAILABLE_QUANTITY > 0){
+                    for(let j = 1; j <= available; j++) {
+                        availableRes[j] = j;
+                        if(j > 4) break;
+                    }
+                    availableRes.splice(0,1);
+                    if(value.QUANTITY > 5) {
+                        value.QUANTITY = 5;
+                    }
+                    $.each(availableRes, function (aKey, aRes) {
+                        availableHtml += '<option '+(value.QUANTITY === aRes ? "selected" : "")+' value="'+aRes+'">'+aRes+'</option>';
+                    });
+                }
+
+                $(selectors.list).append(
+                    '<div style="display: none;" class="container basket item"><div data-productKey="'+value.PRODUCT_ID+'"></div></div>' +
+                    '<div class="list-basket-goods__item d-row js-basket-item-row">' +
+                        '<div class="list-basket-goods__img"><a href="'+value.DETAIL_PAGE_URL+'"><img src="'+value.PREVIEW_PICTURE_SRC+'" alt=""/></a></div>' +
+                        '<div class="list-basket-goods__data">' +
+                            '<div class="list-basket-goods__name"><a href="'+value.DETAIL_PAGE_URL+'">'+value.NAME+'</a></div>'+
+                            '<div class="list-basket-goods__price d-row"><span class="list-basket-goods__price-current js-basket-item-price-'+value.ID+'">'+value.SUM_FULL_PRICE_FORMATED+'</span></div>' +
+                            '<div class="list-basket-goods__row d-row">' +
+                                '<div class="list-basket-goods__select d-row">' +
+                                    '<span class="list-basket-goods__select-name">Кол-во:</span>' +
+                                    '<div class="list-basket-goods__select-change">' +
+                                        '<select class="list-basket-select js-list-basket-select js-list-basket-quantity" data-id="'+value.ID+'">' +
+                                            availableHtml +
+                                        '</select>' +
+                                    '</div>' +
+                                '</div>' +
+                                sizeBlock +
+                            '</div>' +
+                        '</div>' +
+                        '<a class="list-basket-goods__item-del js-basket-item-delete js-ga-remove-from-card" href="#" data-id="'+value.ID+'"  data-product-id="'+value.PRODUCT_ID+'">' +
+                            '<svg class="icon icon-goods-del"><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/local/templates/pandora/assets/images/sprite.svg#icon-goods-del"></use></svg>' +
+                        '</a>' +
+                    '</div>'
+                );
+            });
+
+            initDeleteItem();
+            showHideBlock('show');
+
+            $(".js-list-basket-select").select2({minimumResultsForSearch: -1});
+
+            if(innerWidth > 767) {
+                $(".basket-panel__list-basket-goods").mCustomScrollbar();
+            }
+        }
+    };
+
+    let updateBasketCount = function () {
+        $.ajax({
+            url: '/local/ajax/actions/BasketCount.php',
+            type: 'post',
+            data: {},
+            dataType: 'json',
+            success: function (data) {
+                if (data.count > 0) {
+                    $('.basket__value').remove();
+                    $('.js-header-basket').append('<span class="basket__value">'+data.count+'</span>');
+                } else {
+                    $('.basket__value').remove();
+                    $('.js-header-basket .tooltips').css({'display':'block'});
+                }
+            }
+        });
+    };
+
+    let showHideBlock = function(type) {
+        if (type === 'show') {
+            $(selectors.basketShowBlock).show();
+        } else {
+            $(selectors.basketShowBlock).hide();
+        }
+    };
+
+    let showWarning = function (result) {
+        //TODO: Доделать уведомление
+        if (result[0])
+            alert(result[0]);
+    };
+
+    let showLoader = function() {
+        $('.loader').addClass('loader--active');
+    };
+
+    let hideLoader = function() {
+        $('.loader').removeClass('loader--active');
+    };
+
+    let init = function(data) {
+        dataPost.signedParamsString = data.signedParamsString;
+
+        initDeleteItem();
+        initChangeQuantity();
+        initChangeSize();
+        initSetCoupon();
+        initClearCoupon();
+        updateBasketCount();
+
+        /**
+         * Слушаем изменение в корзине
+         */
+        BX.ready(function() {
+            updateBasketCount();
+        });
+        BX.addCustomEvent('onAjaxSuccess', function(){
+            updateBasketCount();
+        });
+        BX.addCustomEvent('OnBasketChange', function(){
+            recalculate();
+        });
+    };
+
+    return {
+        init,
+        updateBasketCount
+    };
+})();
+
+/* End */
+;
+; /* Start:"a:4:{s:4:"full";s:81:"/local/templates/pandora/components/x/ib.list/cartadding/script.js?17071250521246";s:6:"source";s:66:"/local/templates/pandora/components/x/ib.list/cartadding/script.js";s:3:"min";s:0:"";s:3:"map";s:0:"";}"*/
+document.addEventListener('DOMContentLoaded', () => {
+    var addingBlock = document.querySelector('.list-basket-adding');
+    var inputs = addingBlock.querySelectorAll('input');
+    inputs.forEach((i) => {
+        i.addEventListener('change',() => {
+            var action;
+            if (i.checked) {
+                action = 'add';
+            } else {
+                action = 'del';
+            }
+            BX.ajax({
+                    url: '/local/ajax/basket.php',
+                    data: {
+                        sessid: BX.bitrix_sessid(),
+                        action: action,
+                        product: i.value
+                    },
+                    method: 'POST',
+                    dataType: 'json', // html|json|script – данные какого типа предполагаются в ответе
+                    onsuccess: (response) => {
+                        console.log(response);
+                        BX.onCustomEvent('OnBasketChange');
+                    },
+                    onfailure: (response) => {
+                        console.log(response);
+                        BX.onCustomEvent('OnBasketChange');
+                    }
+                });
+            
+        })
+    });
+});
+/* End */
+;; /* /local/components/sdvv/search.form/templates/search/script.js?16650477808209*/
+; /* /local/templates/pandora/components/bitrix/sale.basket.basket/.default/script.js?164871953915972*/
+; /* /local/templates/pandora/components/x/ib.list/cartadding/script.js?17071250521246*/
